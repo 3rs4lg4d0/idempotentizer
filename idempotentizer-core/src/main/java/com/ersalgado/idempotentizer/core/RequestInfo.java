@@ -9,12 +9,14 @@ public class RequestInfo {
     private final String consumerId;
     private final boolean processed;
     private final Instant processedAt;
+    private final Object returnedValue;
 
-    public RequestInfo(UUID idempotencyKey, String consumerId, Instant processedAt) {
+    public RequestInfo(UUID idempotencyKey, String consumerId, Instant processedAt, Object returnedValue) {
         this.idempotencyKey = idempotencyKey;
         this.consumerId = consumerId;
         this.processed = true;
         this.processedAt = processedAt;
+        this.returnedValue = returnedValue;
     }
 
     public RequestInfo() {
@@ -22,6 +24,7 @@ public class RequestInfo {
         this.consumerId = null;
         this.processed = false;
         this.processedAt = null;
+        this.returnedValue = null;
     }
 
     public UUID getIdempotencyKey() {
@@ -38,5 +41,9 @@ public class RequestInfo {
 
     public Instant getProcessedAt() {
         return this.processedAt;
+    }
+
+    public Object getReturnedValue() {
+        return this.returnedValue;
     }
 }

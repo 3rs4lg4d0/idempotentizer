@@ -7,4 +7,6 @@ public interface Idempotentizer {
     RequestInfo checkProcessed(UUID idempotencyKey, String consumerId);
 
     void markAsProcessed(UUID idempotencyKey, String consumerId);
+
+    void markAsProcessed(UUID idempotencyKey, String consumerId, Object returnedValue);
 }

@@ -19,9 +19,14 @@ public class DefaultIdempotentizer implements Idempotentizer {
 
     @Override
     public void markAsProcessed(UUID idempotencyKey, String consumerId) {
+        markAsProcessed(idempotencyKey, consumerId, null);
+    }
+
+    @Override
+    public void markAsProcessed(UUID idempotencyKey, String consumerId, Object returnedValue) {
         checkNotNull(idempotencyKey, "idempotencyKey");
         checkNotNull(idempotencyKey, "consumerId");
-        repository.persistRequestInfo(idempotencyKey, consumerId);
+        repository.persistRequestInfo(idempotencyKey, consumerId, returnedValue);
     }
 
     private void checkNotNull(Object paramValue, String paramName) {

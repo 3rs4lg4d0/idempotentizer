@@ -6,5 +6,5 @@ public interface Repository {
 
     RequestInfo findRequestInfo(UUID idempotencyKey, String consumerId);
 
-    void persistRequestInfo(UUID idempotencyKey, String consumerId);
+    void persistRequestInfo(UUID idempotencyKey, String consumerId, Object returnedValue);
 }

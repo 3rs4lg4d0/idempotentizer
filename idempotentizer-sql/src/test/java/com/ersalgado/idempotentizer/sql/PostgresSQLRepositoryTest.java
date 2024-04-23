@@ -6,8 +6,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.ersalgado.idempotentizer.core.IdempotentizerException;
+import com.ersalgado.idempotentizer.core.JacksonObjectSerde;
+import com.ersalgado.idempotentizer.core.Repository;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.UUID;
-
+import javax.sql.DataSource;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -15,9 +20,6 @@ import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.MountableFile;
-
-import com.ersalgado.idempotentizer.core.IdempotentizerException;
-import com.ersalgado.idempotentizer.core.Repository;
 
 public class PostgresSQLRepositoryTest {
 
@@ -28,30 +30,35 @@ public class PostgresSQLRepositoryTest {
     @ClassRule
     public static PostgreSQLContainer<?> database = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName(DB_NAME)
-            .withUsername(DB_USER).withPassword(DB_PASSWORD)
-            .withCopyFileToContainer(MountableFile.forClasspathResource("/create_table_postgres.sql"),
-                    "/docker-entrypoint-initdb.d/")
+            .withUsername(DB_USER)
+            .withPassword(DB_PASSWORD)
+            .withCopyFileToContainer(
+                    MountableFile.forClasspathResource("/create_table_postgres.sql"), "/docker-entrypoint-initdb.d/")
             .waitingFor(Wait.defaultWaitStrategy());
 
+    private static DataSource datasource;
     private static Repository repository;
 
     @BeforeClass
     public static void setUp() throws Exception {
         var ds = new PGSimpleDataSource();
-        ds.setServerNames(new String[] { "localhost" });
+        ds.setServerNames(new String[] {"localhost"});
         ds.setDatabaseName(DB_NAME);
         ds.setUser(DB_USER);
         ds.setPassword(DB_PASSWORD);
-        ds.setPortNumbers(new int[] { database.getFirstMappedPort() });
-        repository = new SQLRepository(ds);
+        ds.setPortNumbers(new int[] {database.getFirstMappedPort()});
+
+        repository = new SQLRepository(ds, new JacksonObjectSerde());
+        datasource = ds;
     }
 
     @Test
-    public void givenUUIDAndConsumerId_whenPersistRequestInfo_thenPersisted() {
+    public void givenValidInputData_whenPersistRequestInfo_thenPersisted() {
         var uuid = UUID.randomUUID();
         var consumerId = "consumer1";
+        var returnedValue = new UserDto(7, "fakeUser");
 
-        repository.persistRequestInfo(uuid, consumerId);
+        repository.persistRequestInfo(uuid, consumerId, returnedValue);
         var requestInfo = repository.findRequestInfo(uuid, consumerId);
 
         assertNotNull(requestInfo);
@@ -59,14 +66,33 @@ public class PostgresSQLRepositoryTest {
         assertEquals(requestInfo.getIdempotencyKey(), uuid);
         assertEquals(requestInfo.getConsumerId(), consumerId);
         assertNotNull(requestInfo.getProcessedAt());
+        assertEquals(returnedValue, requestInfo.getReturnedValue());
+    }
+
+    @Test
+    public void givenValidInputDataWithoutReturnedValue_whenPersistRequestInfo_thenPersisted() {
+        var uuid = UUID.randomUUID();
+        var consumerId = "consumer1";
+        Object returnedValue = null;
+
+        repository.persistRequestInfo(uuid, consumerId, returnedValue);
+        var requestInfo = repository.findRequestInfo(uuid, consumerId);
+
+        assertNotNull(requestInfo);
+        assertTrue(requestInfo.getProcessed());
+        assertEquals(requestInfo.getIdempotencyKey(), uuid);
+        assertEquals(requestInfo.getConsumerId(), consumerId);
+        assertNotNull(requestInfo.getProcessedAt());
+        assertNull(requestInfo.getReturnedValue());
     }
 
     @Test(expected = IdempotentizerException.class)
     public void givenWrongInput_whenPersistRequestInfo_thenIdempotentizerException() {
         var uuid = UUID.randomUUID();
-        String consumerId = null;
+        String consumerId = null; // cannot be null at database level
+        Object returnedValue = null;
 
-        repository.persistRequestInfo(uuid, consumerId);
+        repository.persistRequestInfo(uuid, consumerId, returnedValue);
     }
 
     @Test
@@ -89,13 +115,45 @@ public class PostgresSQLRepositoryTest {
         String consumerId = "consumer1";
 
         var ds = new PGSimpleDataSource();
-        ds.setServerNames(new String[] { "localhost" });
+        ds.setServerNames(new String[] {"localhost"});
         ds.setDatabaseName(DB_NAME);
         ds.setUser(DB_USER);
         ds.setPassword("wrongpass");
-        ds.setPortNumbers(new int[] { database.getFirstMappedPort() });
-        var unstableRepository = new SQLRepository(ds);
+        ds.setPortNumbers(new int[] {database.getFirstMappedPort()});
+        var unstableRepository = new SQLRepository(ds, new JacksonObjectSerde());
 
         unstableRepository.findRequestInfo(uuid, consumerId);
+    }
+
+    @Test(expected = IdempotentizerException.class)
+    public void givenPersistedRequestInfoForWrongReturnedValue_whenFindRequestInfo_thenIdempotentizerException() {
+        var uuid = UUID.randomUUID();
+        String consumerId = "consumer1";
+        byte[] serializedReturnedValue = "wrong.data".getBytes();
+        persistRequestInfo(uuid, consumerId, serializedReturnedValue);
+
+        repository.findRequestInfo(uuid, consumerId);
+    }
+
+    @Test(expected = IdempotentizerException.class)
+    public void givenPersistedRequestInfoForUnknownClassName_whenFindRequestInfo_thenIdempotentizerException() {
+        var uuid = UUID.randomUUID();
+        String consumerId = "consumer1";
+        byte[] serializedReturnedValue = "wrong.data".getBytes();
+        persistRequestInfo(uuid, consumerId, serializedReturnedValue);
+
+        repository.findRequestInfo(uuid, consumerId);
+    }
+
+    private void persistRequestInfo(UUID idempotencyKey, String consumerId, byte[] serializedReturnedValue) {
+        try (Connection conn = datasource.getConnection();
+                var pstmt = conn.prepareStatement(SQLRepository.INSERT)) {
+            pstmt.setObject(1, idempotencyKey);
+            pstmt.setString(2, consumerId);
+            pstmt.setBytes(3, serializedReturnedValue);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }
