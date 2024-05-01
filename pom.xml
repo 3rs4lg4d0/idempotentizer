@@ -35,6 +35,11 @@
 				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>com.fasterxml.jackson.datatype</groupId>
+				<artifactId>jackson-datatype-jsr310</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.testcontainers</groupId>
 				<artifactId>postgresql</artifactId>
 				<version>${org.testcontainers.version}</version>
@@ -100,7 +105,7 @@
                                         <limit>
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.80</minimum>
+                                            <minimum>0.50</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

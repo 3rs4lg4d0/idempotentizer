@@ -1,6 +1,7 @@
 package com.ersalgado.idempotentizer.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
@@ -10,6 +11,11 @@ public class JacksonObjectSerde implements ObjectSerde {
 
     public JacksonObjectSerde() {
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+    }
+
+    public JacksonObjectSerde(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
     @Override
