@@ -15,7 +15,7 @@ public class JacksonObjectSerde implements ObjectSerde {
     }
 
     public JacksonObjectSerde(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Override
