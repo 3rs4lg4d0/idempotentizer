@@ -11,6 +11,7 @@ import com.ersalgado.idempotentizer.core.JacksonObjectSerde;
 import com.ersalgado.idempotentizer.core.Repository;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.BeforeClass;
@@ -56,7 +57,7 @@ public class PostgresSQLRepositoryTest {
     public void givenValidInputData_whenPersistRequestInfo_thenPersisted() {
         var uuid = UUID.randomUUID();
         var consumerId = "consumer1";
-        var returnedValue = new UserDto(7, "fakeUser");
+        var returnedValue = new UserDto(7, "fakeUser", Instant.now());
 
         repository.persistRequestInfo(uuid, consumerId, returnedValue);
         var requestInfo = repository.findRequestInfo(uuid, consumerId);
