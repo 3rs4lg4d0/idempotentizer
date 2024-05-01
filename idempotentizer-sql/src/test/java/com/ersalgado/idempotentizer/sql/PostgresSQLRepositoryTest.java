@@ -9,6 +9,9 @@ import static org.junit.Assert.assertTrue;
 import com.ersalgado.idempotentizer.core.IdempotentizerException;
 import com.ersalgado.idempotentizer.core.JacksonObjectSerde;
 import com.ersalgado.idempotentizer.core.Repository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -137,11 +140,12 @@ public class PostgresSQLRepositoryTest {
     }
 
     @Test(expected = IdempotentizerException.class)
-    public void givenPersistedRequestInfoForUnknownClassName_whenFindRequestInfo_thenIdempotentizerException() {
+    public void givenPersistedRequestInfoForUnknownClassName_whenFindRequestInfo_thenIdempotentizerException()
+            throws IOException {
         var uuid = UUID.randomUUID();
         String consumerId = "consumer1";
-        byte[] serializedReturnedValue = "wrong.data".getBytes();
-        persistRequestInfo(uuid, consumerId, serializedReturnedValue);
+        var returnedValue = new UserDto(7, "fakeUser", Instant.now());
+        persistRequestInfo(uuid, consumerId, serialize("BadClassName", returnedValue));
 
         repository.findRequestInfo(uuid, consumerId);
     }
@@ -156,5 +160,17 @@ public class PostgresSQLRepositoryTest {
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    private byte[] serialize(String className, Object object) throws IOException {
+        var objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        if (object == null) return new byte[0];
+
+        byte[] objectBytes = objectMapper.writeValueAsBytes(object);
+
+        SerializedObjectWrapperForTesting wrapper = new SerializedObjectWrapperForTesting(className, objectBytes);
+        return objectMapper.writeValueAsBytes(wrapper);
     }
 }
