@@ -26,7 +26,4 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-
-      - name: Update dependency graph
-        uses: advanced-security/maven-dependency-submission-action@v3
+        run: mvn -B package
