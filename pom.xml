@@ -4,7 +4,7 @@
 
 	<groupId>com.ersalgado</groupId>
 	<artifactId>idempotentizer-parent</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>idempotentizer-parent</name>
 	<description>Idempotentizer Java library</description>
 	<packaging>pom</packaging>
