@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/3rs4lg4d0/idempotentizer/compare/v1.0.0...v1.0.1) (2024-05-07)
+
+
+### Documentation
+
+* update README ([e0e7eff](https://github.com/3rs4lg4d0/idempotentizer/commit/e0e7eff5ed43958e2afe951ae4f88334a102cd66))
+
 ## 1.0.0 (2024-05-01)
 
 
