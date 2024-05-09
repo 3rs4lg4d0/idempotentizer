@@ -19,7 +19,7 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jackson.version>2.17.1</jackson.version>
-		<org.testcontainers.version>1.19.7</org.testcontainers.version>
+		<org.testcontainers.version>1.19.8</org.testcontainers.version>
         <postgresql.version>42.7.3</postgresql.version>
         <mysql-connector.version>8.3.0</mysql-connector.version>
         <jacoco-plugin.version>0.8.12</jacoco-plugin.version>
